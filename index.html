@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather App</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    padding: 30px;
+    border-radius: 20px;
+    width: 350px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+}
+
+.search-box button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #ffffff;
+    color: #333;
+    font-weight: bold;
+}
+
+.weather-icon {
+    width: 100px;
+    margin: 10px 0;
+}
+
+.temp {
+    font-size: 40px;
+    font-weight: 600;
+}
+
+.details {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.location-btn {
+    margin-top: 15px;
+    background: white;
+    color: #333;
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>🌤 Weather App</h1>
+
+    <div class="search-box">
+        <input type="text" id="cityInput" placeholder="Enter city name">
+        <button onclick="getWeatherByCity()">Search</button>
+    </div>
+
+    <img id="weatherIcon" class="weather-icon" src="" alt="">
+
+    <h2 id="cityName"></h2>
+    <div class="temp" id="temperature"></div>
+    <p id="description"></p>
+
+    <div class="details">
+        <div>💧 <span id="humidity"></span></div>
+        <div>🌬 <span id="wind"></span></div>
+    </div>
+
+    <button class="location-btn" onclick="getWeatherByLocation()">📍 Use My Location</button>
+</div>
+
+<script>
+
+async function getCoordinates(city) {
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`;
+
+    const response = await fetch(geoUrl);
+    const data = await response.json();
+
+    if (!data.results) {
+        alert("City not found!");
+        return null;
+    }
+
+    return {
+        lat: data.results[0].latitude,
+        lon: data.results[0].longitude,
+        name: data.results[0].name
+    };
+}
+
+async function fetchWeather(lat, lon, cityName) {
+
+    const weatherUrl =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`;
+
+    const response = await fetch(weatherUrl);
+    const data = await response.json();
+
+    const weather = data.current;
+
+    document.getElementById("cityName").innerText = cityName;
+    document.getElementById("temperature").innerText =
+        Math.round(weather.temperature_2m) + "°C";
+
+    document.getElementById("description").innerText =
+        "Weather Code: " + weather.weather_code;
+
+    document.getElementById("humidity").innerText =
+        weather.relative_humidity_2m + "%";
+
+    document.getElementById("wind").innerText =
+        Math.round(weather.wind_speed_10m) + " km/h";
+}
+
+async function getWeatherByCity() {
+    const city = document.getElementById("cityInput").value;
+    if (!city) return alert("Please enter a city name");
+
+    const coords = await getCoordinates(city);
+    if (!coords) return;
+
+    fetchWeather(coords.lat, coords.lon, coords.name);
+}
+
+function getWeatherByLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async position => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            fetchWeather(lat, lon, "Your Location");
+        });
+    } else {
+        alert("Geolocation not supported");
+    }
+}
+
+</script>
+
+</body>
+</html>
